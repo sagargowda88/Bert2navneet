@@ -1,4 +1,4 @@
-import torch
+ import torch
 import config
 from Source.data import TextDataset
 from Source.utils import load_file, save_file
@@ -8,24 +8,20 @@ from Source.model import BertClassifier, train, test
 def main():
     # Load token, label, and label encoder files
     print("Loading the files...")
-    tokens = load_file(config.tokens_path)
-    labels = load_file(config.labels_path)
-    labels = labels[:1000]  # Limit the number of labels for faster testing
+    data = load_file(config.data_path)
+    labels = data[config.label_col].values.tolist()
     num_classes = len(set(labels))
-
-    # Combine tokens and labels into tuples
-    tokens_labels = list(zip(tokens, labels))
 
     # Split data into train, valid, and test sets
     print("Splitting data into train, valid, and test sets...")
-    X_train, X_test, y_train, y_test = train_test_split(tokens_labels, labels, test_size=0.2)
-    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.25)
+    train_data, test_data = train_test_split(data, test_size=0.2)
+    train_data, valid_data = train_test_split(train_data, test_size=0.25)
 
     # Create PyTorch datasets
     print("Creating PyTorch datasets...")
-    train_dataset = TextDataset(X_train)
-    valid_dataset = TextDataset(X_valid)
-    test_dataset = TextDataset(X_test)
+    train_dataset = TextDataset(train_data)
+    valid_dataset = TextDataset(valid_data)
+    test_dataset = TextDataset(test_data)
 
     # Create data loaders
     print("Creating data loaders...")
