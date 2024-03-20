@@ -13,15 +13,19 @@ class BertClassifier(nn.Module):
         for param in self.bert.parameters():
             param.requires_grad = False  # Freeze BERT parameters
         self.dropout = nn.Dropout(dropout)
-        self.linear = nn.Linear(768, num_classes)  # 768 is the BERT hidden size
+        self.linear = nn.Linear(768 * len(config.text_col_names), num_classes)  # Updated input size
         self.activation = nn.ReLU()
 
     def forward(self, input_ids, attention_mask):
-        # Perform a forward pass through the model
-        _, bert_output = self.bert(input_ids=input_ids,
-                                   attention_mask=attention_mask,
-                                   return_dict=False)
-        dropout_output = self.activation(self.dropout(bert_output))
+        bert_outputs = []
+        for i in range(len(input_ids)):
+            _, bert_output = self.bert(input_ids=input_ids[i],
+                                       attention_mask=attention_mask[i],
+                                       return_dict=False)
+            bert_outputs.append(bert_output)
+        
+        concat_output = torch.cat(bert_outputs, dim=1)
+        dropout_output = self.activation(self.dropout(concat_output))
         final_output = self.linear(dropout_output)
         return final_output
 
@@ -51,8 +55,10 @@ def train(train_loader, valid_loader, model, criterion, optimizer,
             batch_labels = batch_labels.to(device)
             input_ids = input_ids.to(device)
             attention_mask = attention_mask.to(device)
+            input_ids = torch.squeeze(input_ids, 1)
             # Forward pass
             batch_output = model(input_ids, attention_mask)
+            batch_output = torch.squeeze(batch_output)
             # Calculate loss
             loss = criterion(batch_output, batch_labels)
             train_loss.append(loss.item())
@@ -70,8 +76,10 @@ def train(train_loader, valid_loader, model, criterion, optimizer,
             batch_labels = batch_labels.to(device)
             input_ids = input_ids.to(device)
             attention_mask = attention_mask.to(device)
+            input_ids = torch.squeeze(input_ids, 1)
             # Forward pass
             batch_output = model(input_ids, attention_mask)
+            batch_output = torch.squeeze(batch_output)
             # Calculate loss
             loss = criterion(batch_output, batch_labels)
             valid_loss.append(loss.item())
@@ -102,8 +110,10 @@ def test(test_loader, model, criterion, device):
         batch_labels = batch_labels.to(device)
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
+        input_ids = torch.squeeze(input_ids, 1)
         # Forward pass
         batch_output = model(input_ids, attention_mask)
+        batch_output = torch.squeeze(batch_output)
         # Calculate loss
         loss = criterion(batch_output, batch_labels)
         test_loss.append(loss.item())
