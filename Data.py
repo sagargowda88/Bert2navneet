@@ -1,16 +1,16 @@
- import torch
+import torch
 
 class TextDataset(torch.utils.data.Dataset):
-    def __init__(self, tokens_labels):
+    def __init__(self, data):
         """
         Initialize a TextDataset.
 
         Args:
-            tokens_labels (list): List of tuples containing tokenized text data and corresponding labels.
+            data (DataFrame): DataFrame containing tokenized text data and corresponding labels.
 
         This class is designed to work as a PyTorch Dataset, which means it can be used with PyTorch's DataLoader for efficient data loading during training and evaluation.
         """
-        self.tokens_labels = tokens_labels  # List of tuples containing (tokenized text data, labels)
+        self.data = data
 
     def __len__(self):
         """
@@ -19,7 +19,7 @@ class TextDataset(torch.utils.data.Dataset):
         Returns:
             int: Number of data points in the dataset.
         """
-        return len(self.tokens_labels)
+        return len(self.data)
 
     def __getitem__(self, idx):
         """
@@ -31,4 +31,6 @@ class TextDataset(torch.utils.data.Dataset):
         Returns:
             tuple: A tuple containing the tokenized text data and its label for the specified data point.
         """
-        return self.tokens_labels[idx]
+        text_data = self.data.iloc[idx][config.text_cols].values.tolist()
+        label = self.data.iloc[idx][config.label_col]
+        return text_data, label
